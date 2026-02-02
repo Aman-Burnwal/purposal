@@ -80,7 +80,7 @@ const ProposalScreen = ({ onYesClick }) => {
     >
       {/* Floating hearts background */}
       <div className="hearts-background">
-        {[...Array(15)].map((_, i) => (
+        {[...Array(8)].map((_, i) => (
           <div key={i} className={`heart heart-${i + 1}`}>💕</div>
         ))}
       </div>

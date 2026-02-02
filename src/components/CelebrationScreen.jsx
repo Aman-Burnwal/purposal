@@ -6,7 +6,7 @@ const CelebrationScreen = () => {
 
   // Generate confetti particles
   useEffect(() => {
-    const particles = Array.from({ length: 50 }, (_, i) => ({
+    const particles = Array.from({ length: 30 }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
       delay: Math.random() * 2,
@@ -54,22 +54,22 @@ const CelebrationScreen = () => {
 
       {/* Floating hearts */}
       <div className="celebration-hearts">
-        {[...Array(20)].map((_, i) => (
+        {[...Array(12)].map((_, i) => (
           <motion.div
             key={i}
             className="celebration-heart"
             style={{
-              left: `${(i * 5) % 100}%`,
+              left: `${(i * 8) % 100}%`,
             }}
             initial={{ y: window.innerHeight, opacity: 0, scale: 0 }}
             animate={{
               y: -100,
               opacity: [0, 1, 1, 0],
-              scale: [0, 1.5, 1, 0.5],
+              scale: [0, 1.2, 1, 0.5],
             }}
             transition={{
-              duration: 4 + Math.random() * 2,
-              delay: i * 0.15,
+              duration: 5 + Math.random() * 2,
+              delay: i * 0.2,
               repeat: Infinity,
               ease: "easeInOut",
             }}
@@ -168,7 +168,7 @@ const CelebrationScreen = () => {
 
       {/* Sparkle effects */}
       <div className="sparkles">
-        {[...Array(25)].map((_, i) => (
+        {[...Array(15)].map((_, i) => (
           <motion.div
             key={i}
             className="sparkle"
