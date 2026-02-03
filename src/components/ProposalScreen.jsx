@@ -5,7 +5,11 @@ const ProposalScreen = ({ onYesClick }) => {
   const [noButtonPosition, setNoButtonPosition] = useState({ x: 0, y: 0 });
   const [dodgeCount, setDodgeCount] = useState(0);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  const [holdProgress, setHoldProgress] = useState(0);
+  const [isHolding, setIsHolding] = useState(false);
   const noButtonRef = useRef(null);
+  const holdTimerRef = useRef(null);
+  const holdStartRef = useRef(null);
 
   // Romantic messages that cycle through
   const romanticMessages = [
@@ -25,6 +29,26 @@ const ProposalScreen = ({ onYesClick }) => {
       setCurrentMessageIndex((prev) => (prev + 1) % romanticMessages.length);
     }, 4000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Auto-move button on mobile every 0.8 seconds
+  useEffect(() => {
+    const isMobile = window.innerWidth <= 768;
+    if (!isMobile) return;
+
+    const autoMoveInterval = setInterval(() => {
+      const newPosition = getRandomPosition();
+      setNoButtonPosition(newPosition);
+      setDodgeCount(prev => prev + 1);
+      // Reset hold progress when button moves
+      setHoldProgress(0);
+      setIsHolding(false);
+      if (holdTimerRef.current) {
+        clearInterval(holdTimerRef.current);
+      }
+    }, 800); // Move every 0.8 seconds
+
+    return () => clearInterval(autoMoveInterval);
   }, []);
 
   // Calculate random position within viewport bounds
@@ -47,18 +71,51 @@ const ProposalScreen = ({ onYesClick }) => {
     return { x: randomX, y: randomY };
   };
 
-  // Handle hover over "No" button
+  // Handle hover over "No" button (desktop only)
   const handleNoHover = () => {
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) return; // Don't trigger on mobile, auto-move handles it
+
     const newPosition = getRandomPosition();
     setNoButtonPosition(newPosition);
     setDodgeCount(prev => prev + 1);
   };
 
-  // Handle click on "No" button (it dodges before being clicked)
+  // Handle press start (3-second hold requirement)
+  const handlePressStart = () => {
+    setIsHolding(true);
+    holdStartRef.current = Date.now();
+
+    // Update progress every 50ms
+    holdTimerRef.current = setInterval(() => {
+      const elapsed = Date.now() - holdStartRef.current;
+      const progress = Math.min((elapsed / 3000) * 100, 100);
+      setHoldProgress(progress);
+
+      if (progress >= 100) {
+        // They held for 3 seconds, but button will move before they can complete it
+        clearInterval(holdTimerRef.current);
+      }
+    }, 50);
+  };
+
+  // Handle press end
+  const handlePressEnd = () => {
+    setIsHolding(false);
+    setHoldProgress(0);
+    if (holdTimerRef.current) {
+      clearInterval(holdTimerRef.current);
+    }
+  };
+
+  // Handle click on "No" button (only works if held for 3 seconds, which is nearly impossible)
   const handleNoClick = () => {
-    const newPosition = getRandomPosition();
-    setNoButtonPosition(newPosition);
-    setDodgeCount(prev => prev + 1);
+    if (holdProgress < 100) {
+      // Not held long enough, move the button
+      const newPosition = getRandomPosition();
+      setNoButtonPosition(newPosition);
+      setDodgeCount(prev => prev + 1);
+    }
   };
 
   // Get playful message based on dodge count
@@ -184,12 +241,20 @@ const ProposalScreen = ({ onYesClick }) => {
             Yes! Forever & Always 💖
           </motion.button>
 
-          {/* No Button - dodges on hover/click */}
+          {/* No Button - dodges on hover/click, requires 3-second hold */}
           <motion.button
             ref={noButtonRef}
             className="no-button"
             onMouseEnter={handleNoHover}
-            onTouchStart={handleNoHover}
+            onMouseDown={handlePressStart}
+            onMouseUp={handlePressEnd}
+            onMouseLeave={handlePressEnd}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              handlePressStart();
+            }}
+            onTouchEnd={handlePressEnd}
+            onTouchCancel={handlePressEnd}
             onClick={handleNoClick}
             initial={{ opacity: 0, y: 20 }}
             animate={{
@@ -205,7 +270,24 @@ const ProposalScreen = ({ onYesClick }) => {
             }}
             style={{ position: 'relative' }}
           >
-            No 😢
+            <span style={{ position: 'relative', zIndex: 2 }}>No 😢</span>
+            {/* Hold progress indicator */}
+            {isHolding && (
+              <motion.div
+                className="hold-progress"
+                initial={{ width: 0 }}
+                animate={{ width: `${holdProgress}%` }}
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  height: '100%',
+                  background: 'rgba(255, 107, 157, 0.3)',
+                  borderRadius: '50px',
+                  zIndex: 1,
+                }}
+              />
+            )}
           </motion.button>
         </div>
 
